@@ -209,8 +209,6 @@ compileGoTerm it  n goterm = go' it goterm
   go' _ UndefinedTerm = TError TUnreachable
   go' _ _ = TErased
 
-data
-
 cong : {A B : Set} -> {a1 a2 : A} -> (f : A -> B) -> a1 ≡ a2 -> f a1 ≡ f a2
 cong f refl = refl
 
