@@ -265,3 +265,18 @@ compileTest2 (TestConst "helper.MoreOrEquals") = TestPrim PGeq
 compileTest2 (TestConst "helper.Less") = TestPrim PLt
 compileTest2 (TestConst "if") = TestPrim PIf
 compileTest2 (TestConst x) = TestPrim PIf
+
+
+addFunction : TTerm
+addFunction = 
+        TApp (TPrim PIf)
+        (TApp (TPrim PEqI) (TLit (LitNat 0) ∷ TVar 1 ∷ []) ∷
+        TVar 0 ∷
+        TLet (TApp (TPrim PSub) (TVar 1 ∷ TLit (LitNat 1) ∷ []))
+        (TApp (TPrim PAdd)
+          (TLit (LitNat 1) ∷
+          TApp (TDef (QName' "demo.add")) (TVar 0 ∷ TVar 1 ∷ []) ∷ []))
+        ∷ [])
+
+addEquals : addFunction ≡ (compileGoTerm 1 (compileTerm 1 addFunction))
+addEquals = refl
