@@ -280,3 +280,36 @@ addFunction =
 
 addEquals : addFunction ≡ (compileGoTerm 1 (compileTerm 1 addFunction))
 addEquals = refl
+
+lengthFunction : TTerm
+lengthFunction = 
+            TCase 0 (CaseInfo' false (CTData (QName' "demo.List")))
+            (TError TUnreachable)
+            (TACon (QName' "List_empty") 0 (TLit (LitNat 0)) ∷
+            TACon (QName' "List_append") 2
+            (TApp (TPrim PAdd)
+              (TLit (LitNat 1) ∷
+              TApp (TDef (QName' "length")) (TErased ∷ TVar 0 ∷ []) ∷ []))
+            ∷ [])
+
+lengthEquals : lengthFunction ≡ (compileGoTerm 0 (compileTerm 0 lengthFunction))
+lengthEquals = refl            
+
+maxFunction : TTerm
+maxFunction = 
+    TApp (TPrim PIf)
+    (TApp (TPrim PEqI) (TLit (LitNat 0) ∷ TVar 1 ∷ []) ∷
+    TVar 0 ∷
+    TLet (TApp (TPrim PSub) (TVar 1 ∷ TLit (LitNat 1) ∷ []))
+    (TApp (TPrim PIf)
+      (TApp (TPrim PEqI) (TLit (LitNat 0) ∷ TVar 1 ∷ []) ∷
+      TVar 2 ∷
+      TLet (TApp (TPrim PSub) (TVar 1 ∷ TLit (LitNat 1) ∷ []))
+      (TApp (TPrim PAdd)
+        (TLit (LitNat 1) ∷
+        TApp (TDef (QName' "max")) (TVar 1 ∷ TVar 0 ∷ []) ∷ []))
+      ∷ []))
+    ∷ [])
+
+maxEquals : maxFunction ≡ (compileGoTerm 1 (compileTerm 1 maxFunction))
+maxEquals = refl        
