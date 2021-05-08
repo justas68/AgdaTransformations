@@ -24,8 +24,7 @@ data CaseType : Set where
  CTQName : CaseType
 
 data CaseInfo : Set where
- caseLazy : Bool -> CaseInfo
- caseType : CaseType -> CaseInfo
+ CaseInfo' : Bool -> CaseType -> CaseInfo
 
 data TPrim' : Set where
   PAdd : TPrim'
@@ -64,8 +63,6 @@ data TTerm where
 
 data TAlt where
   TACon : QName -> Nat -> TTerm -> TAlt
-  TAGuard : TTerm -> TTerm -> TAlt
-  TALit : Literal -> TTerm -> TAlt
 
 data LocalId : Set where
   LocalId' : Nat -> LocalId
@@ -94,7 +91,7 @@ data GoTerm : Set where
   Local : LocalId -> GoTerm
   Global : GlobalId -> GoTerm
   GoVar : Nat -> GoTerm
-  GoSwitch : GoTerm -> List GoCase -> GoTerm
+  GoSwitch : GoTerm -> MemberId -> List GoCase -> GoTerm
   GoMethodCall : MemberId -> List GoMethodCallParam -> GoTerm
   GoCreateStruct : MemberId -> List GoTerm -> GoTerm
   GoIf : GoTerm -> GoTerm -> GoTerm -> GoTerm
@@ -139,11 +136,6 @@ getExpFromMethodParam ((GoMethodCallParam' x _) ∷ xs) = x ∷ (getExpFromMetho
 getVarName : Nat -> String
 getVarName n = (primShowChar (primNatToChar ((primCharToNat 'a') + n)))
 
-∣_-_∣ : Nat -> Nat -> Nat
-∣ 0  - y     ∣ = y
-∣ x     - 0  ∣ = x
-∣ suc x - suc y ∣ = ∣ x - y ∣
-
 compilePrim : TPrim' -> GoTerm
 compilePrim PEqI = Const "helper.Equals"
 compilePrim PSub = Const "helper.Minus"
@@ -155,6 +147,25 @@ compilePrim PIf = Const "if"
 
 {-# TERMINATING #-}
 compileTerm : Nat -> TTerm -> GoTerm
+
+{-# TERMINATING #-}
+compileGoTerm : Nat -> GoTerm -> TTerm
+
+compileAlt : Nat -> Nat -> TAlt -> GoCase
+compileAlt argCount switchVar (TACon con ar body) = do
+  let compiled = compileTerm (argCount + ar) body
+  let memId = fullName con
+  GoCase' memId switchVar argCount ar (compiled ∷ [])
+
+decompileAlt : Nat -> GoCase -> TAlt
+decompileAlt n (GoCase' memId switchVar argCount ar (compiled ∷ [])) = do
+  let decompiled = compileGoTerm (n + ar) compiled
+  let con = fullNameReverse memId
+  TACon con ar decompiled
+decompileAlt n (GoCase' memId switchVar argCount ar _) = do
+  let con = fullNameReverse memId
+  TACon con ar (TError TUnreachable)  
+  
 compileTerm n tterm = go tterm
     where
     go : TTerm -> GoTerm -- +
@@ -174,6 +185,9 @@ compileTerm n tterm = go tterm
       let memberId = fullName q
       GoMethodCall memberId [] -- +
     go (TLet varDef nextExp) = GoLet (getVarName (n + 1)) (go varDef) (compileTerm (n + 1) nextExp) -- +
+    go (TCase sc (CaseInfo' false (CTData q)) (TError TUnreachable) alts) = do
+      let cases = map (compileAlt n (n - sc)) alts
+      GoSwitch (GoVar (n - sc)) (fullName q) cases
     go (TLit l) = literal l -- +
     go (TPrim p) = compilePrim p -- +
     go TErased = GoErased -- +
@@ -181,33 +195,31 @@ compileTerm n tterm = go tterm
     go (TError TUnreachable) = UndefinedTerm
     go _ = Null
 
-{-# TERMINATING #-}
-compileGoTerm : Nat -> Nat -> GoTerm -> TTerm
-compileGoTerm it  n goterm = go' it goterm
+compileGoTerm  n goterm = go' goterm
   where
-  go' : Nat -> GoTerm -> TTerm
-  go' 10 _ = TError TUnreachable
-  go' iterates (GoVar x) = TVar (n - x)
-  go' _ (GoMethodCall memberId []) = TApp (TDef (fullNameReverse memberId)) []
-  go' iterates (GoMethodCall memberId x) = TApp (TDef (fullNameReverse memberId))  (map (go' (iterates + 1)) (getExpFromMethodParam x))
-  go' iterates (GoCreateStruct memberId []) = TApp (TCon (fullNameReverse memberId)) []
-  go' iterates (GoCreateStruct memberId x) = TApp (TCon (fullNameReverse memberId)) (map (go' (iterates + 1)) x)
-  go' iterates (GoIf c x y) = TApp (TPrim PIf) ((compileGoTerm (iterates + 1) n c) ∷ (compileGoTerm (iterates + 1) n x) ∷ (compileGoTerm (iterates + 1) n y) ∷ [])
-  go' iterates (PrimOp op x y) = TApp (go' (iterates + 1) op) ((go' (iterates + 1) x) ∷ (go' (iterates + 1) y) ∷ [])
-  go' iterates (GoLet var t1 t2) = TLet (go' (iterates + 1) t1) (compileGoTerm (iterates + 1) (n + 1) t2)
-  go' _ (Const "helper.Equals") = TPrim PEqI
-  go' _ (Const "helper.Minus") = TPrim PSub
-  go' _ (Const "helper.Multiply") = TPrim PMul
-  go' _ (Const "helper.Add") = TPrim PAdd
-  go' _ (Const "helper.MoreOrEquals") = TPrim PGeq
-  go' _ (Const "helper.Less") = TPrim PLt
-  go' _ (Const "if") = TPrim PIf
-  go' _ (GoInt x) = TLit (LitNat x)
-  go' _ (Const x) = TLit (LitChar x)
-  go' iterates (GoLam x) = TLam (go' (iterates + 1) x)
-  go' _ GoErased = TErased
-  go' _ UndefinedTerm = TError TUnreachable
-  go' _ _ = TErased
+  go' : GoTerm -> TTerm
+  go' (GoVar x) = TVar (n - x)
+  go' (GoMethodCall memberId []) = TApp (TDef (fullNameReverse memberId)) []
+  go' (GoMethodCall memberId x) = TApp (TDef (fullNameReverse memberId))  (map go' (getExpFromMethodParam x))
+  go' (GoCreateStruct memberId []) = TApp (TCon (fullNameReverse memberId)) []
+  go' (GoCreateStruct memberId x) = TApp (TCon (fullNameReverse memberId)) (map go' x)
+  go' (GoIf c x y) = TApp (TPrim PIf) ((compileGoTerm n c) ∷ (compileGoTerm n x) ∷ (compileGoTerm n y) ∷ [])
+  go' (PrimOp op x y) = TApp (go' op) ((go' x) ∷ (go' y) ∷ [])
+  go' (GoLet var t1 t2) = TLet (go' t1) (compileGoTerm (n + 1) t2)
+  go' (GoSwitch (GoVar vn) name cases) = TCase (n - vn) (CaseInfo' false (CTData (fullNameReverse name))) (TError TUnreachable) (map (decompileAlt n) cases)
+  go' (Const "helper.Equals") = TPrim PEqI
+  go' (Const "helper.Minus") = TPrim PSub
+  go' (Const "helper.Multiply") = TPrim PMul
+  go' (Const "helper.Add") = TPrim PAdd
+  go' (Const "helper.MoreOrEquals") = TPrim PGeq
+  go' (Const "helper.Less") = TPrim PLt
+  go' (Const "if") = TPrim PIf
+  go' (GoInt x) = TLit (LitNat x)
+  go' (Const x) = TLit (LitChar x)
+  go' (GoLam x) = TLam (go' x)
+  go' GoErased = TErased
+  go' UndefinedTerm = TError TUnreachable
+  go' _ = TErased
 
 cong : {A B : Set} -> {a1 a2 : A} -> (f : A -> B) -> a1 ≡ a2 -> f a1 ≡ f a2
 cong f refl = refl
@@ -253,8 +265,3 @@ compileTest2 (TestConst "helper.MoreOrEquals") = TestPrim PGeq
 compileTest2 (TestConst "helper.Less") = TestPrim PLt
 compileTest2 (TestConst "if") = TestPrim PIf
 compileTest2 (TestConst x) = TestPrim PIf
-
-justEq : (x : Test1) -> (x ≡ (compileTest2 (compileTest1 x)))
-justEq Test1' = refl
-justEq Test1'' = refl
-justEq (TestPrim p) = {!   !}
