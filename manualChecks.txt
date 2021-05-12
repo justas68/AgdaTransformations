@@ -1,0 +1,98 @@
+GoIf (PrimOp (Const "helper.Equals") (GoInt 0) (GoVar 0)) (GoVar 1)
+(GoLet "'c'" (PrimOp (Const "helper.Minus") (GoVar 0) (GoInt 1))
+ (PrimOp (Const "helper.Add") (GoInt 1)
+  (GoMethodCall (MemberId' "demo.add")
+   ([GoMethodCallParam' (GoVar 2) EmptyType,
+    GoMethodCallParam' (GoVar 1) EmptyType]))))
+
+
+GoIf (PrimOp (Const "helper.Equals") (Integer 0) (GoVar 0)) (GoVar 1) 
+(GoLet "C" (PrimOp (Const "helper.Minus") (GoVar 0) (Integer 1))
+ (PrimOp (Const "helper.Add") (Integer 1) 
+ (GoMethodCall (MemberId "Fadd") 
+ [GoMethodCallParam (GoVar 2) EmptyType,
+ GoMethodCallParam (GoVar 1) EmptyType])))
+
+
+TCase 0 (CaseInfo' false (CTData (QName' "demo.List")))
+(TError TUnreachable)
+(TACon (QName' "List_empty") 0 (TLit (LitNat 0)) ∷
+TACon (QName' "List_append") 2
+(TApp (TPrim PAdd)
+  (TLit (LitNat 1) ∷
+  TApp (TDef (QName' "length")) (TErased ∷ TVar 0 ∷ []) ∷ []))
+∷ [])
+
+TCase 0 (CaseInfo' false (CTData (QName' "demo.List")))
+(TError TUnreachable)
+(TACon (QName' "List_empty") 0 (TLit (LitNat 0)) ∷
+ TACon (QName' "List_append") 2
+ (TApp (TPrim PAdd)
+  (TLit (LitNat 1) ∷
+   TApp (TDef (QName' "length")) (TErased ∷ TVar 0 ∷ []) ∷ []))
+ ∷ [])
+
+GoSwitch (GoVar 0) (MemberId' "demo.List")
+[GoCase' (MemberId' "List_empty") 0 0 0 (GoInt 0),
+ GoCase' (MemberId' "List_append") 0 0 2
+ (PrimOp (Const "helper.Add") (GoInt 1)
+  (GoMethodCall (MemberId' "length")
+   [GoMethodCallParam' GoErased EmptyType,
+    GoMethodCallParam' (GoVar 2) EmptyType]))]
+
+ GoSwitch (GoVar 0) 
+ [GoCase (MemberId "List_empty") 0 0 0 [Integer 0],
+ GoCase (MemberId "List_append") 0 0 2 
+ [PrimOp (Const "helper.Add") (Integer 1) 
+ (GoMethodCall (MemberId "Flength") 
+ [GoMethodCallParam GoErased EmptyType,
+ GoMethodCallParam (GoVar 2) EmptyType])]]
+
+
+ GoIf (PrimOp (Const "helper.Equals") (Integer 0) (GoVar 0)) (GoVar 1) 
+ (GoLet "C" (PrimOp (Const "helper.Minus") (GoVar 0) (Integer 1)) 
+ (GoIf (PrimOp (Const "helper.Equals") (Integer 0) (GoVar 1)) 
+ (GoVar 0)
+  (GoLet "D" (PrimOp (Const "helper.Minus") (GoVar 1) (Integer 1)) 
+  (PrimOp (Const "helper.Add") (Integer 1) 
+  (GoMethodCall (MemberId "Fmax") 
+  [GoMethodCallParam (GoVar 2) EmptyType,
+  GoMethodCallParam (GoVar 3) EmptyType])))))
+
+TApp (TPrim PIf)
+(TApp (TPrim PEqI) (TLit (LitNat 0) ∷ TVar 1 ∷ []) ∷
+ TVar 0 ∷
+ TLet (TApp (TPrim PSub) (TVar 1 ∷ TLit (LitNat 1) ∷ []))
+ (TApp (TPrim PIf)
+  (TApp (TPrim PEqI) (TLit (LitNat 0) ∷ TVar 1 ∷ []) ∷
+   TVar 2 ∷
+   TLet (TApp (TPrim PSub) (TVar 1 ∷ TLit (LitNat 1) ∷ []))
+   (TApp (TPrim PAdd)
+    (TLit (LitNat 1) ∷
+     TApp (TDef (QName' "max")) (TVar 1 ∷ TVar 0 ∷ []) ∷ []))
+   ∷ []))
+ ∷ [])
+
+ TApp (TPrim PIf)
+(TApp (TPrim PEqI) (TLit (LitNat 0) ∷ TVar 1 ∷ []) ∷
+ TVar 0 ∷
+ TLet (TApp (TPrim PSub) (TVar 1 ∷ TLit (LitNat 1) ∷ []))
+ (TApp (TPrim PIf)
+  (TApp (TPrim PEqI) (TLit (LitNat 0) ∷ TVar 1 ∷ []) ∷
+   TVar 2 ∷
+   TLet (TApp (TPrim PSub) (TVar 1 ∷ TLit (LitNat 1) ∷ []))
+   (TApp (TPrim PAdd)
+    (TLit (LitNat 1) ∷
+     TApp (TDef (QName' "max")) (TVar 1 ∷ TVar 0 ∷ []) ∷ []))
+   ∷ []))
+ ∷ [])
+
+GoIf (PrimOp (Const "helper.Equals") (GoInt 0) (GoVar 0)) (GoVar 1)
+(GoLet "'c'" (PrimOp (Const "helper.Minus") (GoVar 0) (GoInt 1))
+ (GoIf (PrimOp (Const "helper.Equals") (GoInt 0) (GoVar 1))
+  (GoVar 0)
+  (GoLet "'d'" (PrimOp (Const "helper.Minus") (GoVar 1) (GoInt 1))
+   (PrimOp (Const "helper.Add") (GoInt 1)
+    (GoMethodCall (MemberId' "max")
+     [GoMethodCallParam' (GoVar 2) EmptyType,
+      GoMethodCallParam' (GoVar 3) EmptyType])))))
