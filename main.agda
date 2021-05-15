@@ -312,4 +312,70 @@ maxFunction =
     ∷ [])
 
 maxEquals : maxFunction ≡ (compileGoTerm 1 (compileTerm 1 maxFunction))
-maxEquals = refl        
+maxEquals = refl
+
+bubblesortiterFuntion : TTerm
+bubblesortiterFuntion = TLet (TVar 0)
+  (TCase 1 (CaseInfo' false (CTData (QName' "Vec")))
+  (TError TUnreachable)
+  (TACon (QName' "Vec_appendV") 3
+    (TApp (TPrim PIf)
+    (TApp (TPrim PGeq) (TVar 5 ∷ TLit (LitNat 1) ∷ []) ∷
+      TLet (TVar 4)
+      (TCase 1 (CaseInfo' false (CTData (QName' "Vec")))
+      (TError TUnreachable)
+      (TACon (QName' "Vec_appendV") 3
+        (TApp (TPrim PIf)
+        (TApp (TPrim PGeq) (TVar 9 ∷ TLit (LitNat 2) ∷ []) ∷
+          TLet (TApp (TDef (QName' ">")) (TVar 5 ∷ TVar 1 ∷ []))
+          (TCase 0 (CaseInfo' false (CTData (QName' "Agda.Builtin.Bool")))
+          (TError TUnreachable)
+          (TACon (QName' "Agda.Builtin.Bool.Bool.false") 0
+            (TApp (TCon (QName' "Vec_appendV"))
+            (TErased ∷
+              TVar 6 ∷
+              TApp (TDef (QName' "bubblesortiter"))
+              (TApp (TPrim PSub) (TVar 10 ∷ TLit (LitNat 1) ∷ []) ∷
+              TApp (TCon (QName' "Vec_appendV")) (TErased ∷ TVar 2 ∷ TVar 1 ∷ [])
+              ∷ [])
+              ∷ []))
+            ∷
+            TACon (QName' "Agda.Builtin.Bool.Bool.false") 0
+            (TApp (TCon (QName' "Vec_appendV"))
+            (TErased ∷
+              TVar 2 ∷
+              TApp (TDef (QName' "bubblesortiter"))
+              (TApp (TPrim PSub) (TVar 10 ∷ TLit (LitNat 1) ∷ []) ∷
+              TApp (TCon (QName' "Vec_appendV")) (TErased ∷ TVar 6 ∷ TVar 1 ∷ [])
+              ∷ [])
+              ∷ []))
+            ∷ []))
+          ∷ TVar 8 ∷ []))
+        ∷ TACon (QName' "Vec_emptyV") 0 (TVar 0) ∷ []))
+      ∷ TVar 4 ∷ []))
+    ∷ TACon (QName' "Vec_emptyV") 0 (TVar 0) ∷ []))
+
+bubblesort'Function : TTerm
+bubblesort'Function = TLet (TApp (TDef (QName' "eq")) (TVar 2 ∷ TVar 0 ∷ []))
+  (TCase 0
+  (CaseInfo' false (CTData (QName' "Agda.Builtin.Bool.Bool")))
+  (TError TUnreachable)
+  (TACon (QName' "Agda.Builtin.Bool.Bool.false") 0
+    (TApp (TDef (QName' "bubblesort'"))
+    (TVar 3 ∷
+      TApp (TDef (QName' "bubblesortiter")) (TVar 3 ∷ TVar 2 ∷ []) ∷
+      TApp (TPrim PAdd) (TLit (LitNat 1) ∷ TVar 1 ∷ []) ∷ []))
+    ∷ TACon (QName' "Agda.Builtin.Bool.Bool.true") 0 (TVar 2) ∷ []))
+
+bubblesortFunction : TTerm
+bubblesortFunction = TApp (TDef (QName' "bubblesort'")) (TVar 1 ∷ TVar 0 ∷ TLit (LitNat 0) ∷ [])
+
+bubblesortiterFuntionEquals : bubblesortiterFuntion ≡ (compileGoTerm 2 (compileTerm 2 bubblesortiterFuntion))
+bubblesortiterFuntionEquals = refl
+
+bubblesort'FunctionEquals : bubblesort'Function ≡ (compileGoTerm 3 (compileTerm 3 bubblesort'Function))
+bubblesort'FunctionEquals = refl
+
+bubblesortFunctionEquals : bubblesortFunction ≡ (compileGoTerm 2 (compileTerm 2 bubblesortFunction))
+bubblesortFunctionEquals = refl
+
