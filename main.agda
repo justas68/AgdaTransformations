@@ -199,9 +199,9 @@ compileGoTerm  n goterm = go' goterm
   where
   go' : GoTerm -> TTerm
   go' (GoVar x) = TVar (n - x)
-  go' (GoMethodCall memberId []) = TApp (TDef (fullNameReverse memberId)) []
+  go' (GoMethodCall memberId []) = TDef (fullNameReverse memberId)
   go' (GoMethodCall memberId x) = TApp (TDef (fullNameReverse memberId))  (map go' (getExpFromMethodParam x))
-  go' (GoCreateStruct memberId []) = TApp (TCon (fullNameReverse memberId)) []
+  go' (GoCreateStruct memberId []) = TCon (fullNameReverse memberId)
   go' (GoCreateStruct memberId x) = TApp (TCon (fullNameReverse memberId)) (map go' x)
   go' (GoIf c x y) = TApp (TPrim PIf) ((compileGoTerm n c) ∷ (compileGoTerm n x) ∷ (compileGoTerm n y) ∷ [])
   go' (PrimOp op x y) = TApp (go' op) ((go' x) ∷ (go' y) ∷ [])
@@ -379,3 +379,29 @@ bubblesort'FunctionEquals = refl
 bubblesortFunctionEquals : bubblesortFunction ≡ (compileGoTerm 2 (compileTerm 2 bubblesortFunction))
 bubblesortFunctionEquals = refl
 
+isPrimeFunction : TTerm
+isPrimeFunction = TLet (TLet
+  (TApp (TDef (QName' "dividersCount"))
+    (TErased ∷ TVar 0 ∷ TVar 0 ∷ []))
+  (TApp (TPrim PIf)
+    (TApp (TPrim PEqI) (TLit (LitNat 2) ∷ TVar 0 ∷ []) ∷
+    TCon (QName' "Agda.Builtin.Bool.Bool.true") ∷
+    TApp (TPrim PIf)
+    (TApp (TPrim PEqI) (TLit (LitNat 1) ∷ TVar 0 ∷ []) ∷
+      TCon (QName' "Agda.Builtin.Bool.Bool.false") ∷
+      TApp (TPrim PIf)
+      (TApp (TPrim PGeq) (TVar 0 ∷ TLit (LitNat 2) ∷ []) ∷
+      TCon (QName' "Agda.Builin.Bool.Bool.false") ∷
+      TCon (QName' "Agda.Builtin.Bool.Bool.false") ∷ [])
+      ∷ [])
+    ∷ [])))
+  (TApp (TPrim PIf)
+  (TApp (TPrim PEqI) (TLit (LitNat 0) ∷ TVar 1 ∷ []) ∷
+    TCon (QName' "Agda.Builtin.Bool.Bool.false") ∷
+    TApp (TPrim PIf)
+    (TApp (TPrim PEqI) (TLit (LitNat 1) ∷ TVar 1 ∷ []) ∷
+    TCon (QName' "Agda.Builtin.Bool.Bool.false") ∷ TVar 0 ∷ [])
+    ∷ []))
+
+isPrimeFunctionEqual : isPrimeFunction ≡ (compileGoTerm 1 (compileTerm 1 isPrimeFunction))
+isPrimeFunctionEqual = refl
