@@ -100,6 +100,7 @@ data GoTerm : Set where
   ReturnExpression : GoTerm -> TypeId -> GoTerm
   GoInt : Nat -> GoTerm
   Const : String -> GoTerm
+  GoString : String -> GoTerm
   UndefinedTerm : GoTerm
   GoErased : GoTerm
   GoLam : GoTerm -> GoTerm
@@ -123,7 +124,7 @@ map f (x ∷ xs)  =  f x ∷ map f xs
 
 literal : Literal -> GoTerm
 literal (LitNat x) = (GoInt x)
-literal (LitChar x) = Const x
+literal (LitChar x) = GoString x
 
 getTypelessMethodCallParams : List GoTerm -> List GoMethodCallParam
 getTypelessMethodCallParams [] = []
@@ -215,7 +216,7 @@ compileGoTerm  n goterm = go' goterm
   go' (Const "helper.Less") = TPrim PLt
   go' (Const "if") = TPrim PIf
   go' (GoInt x) = TLit (LitNat x)
-  go' (Const x) = TLit (LitChar x)
+  go' (GoString x) = TLit (LitChar x)
   go' (GoLam x) = TLam (go' x)
   go' GoErased = TErased
   go' UndefinedTerm = TError TUnreachable
@@ -227,45 +228,28 @@ cong f refl = refl
 trans : {A : Set} -> {a1 a2 a3 : A} → a1 ≡ a2 → a2 ≡ a3 → a1 ≡ a3
 trans refl refl = refl
 
-postulate minus-brackets : (m n : Nat) -> (m - (m - n)) ≡ n
-
-
-data Test1 : Set where
-  Test1' : Test1
-  Test1'' : Test1
-  TestPrim : TPrim' -> Test1
-
-data Test2 : Set where
-  Test2' : Test2
-  Test22 : Test2
-  TestConst : String -> Test2
-
-compilePrim' : TPrim' -> Test2
-compilePrim' PEqI = TestConst "helper.Equals"
-compilePrim' PSub = TestConst "helper.Minus"
-compilePrim' PMul = TestConst "helper.Multiply"
-compilePrim' PAdd = TestConst "helper.Add"
-compilePrim' PGeq = TestConst "helper.MoreOrEquals"
-compilePrim' PLt = TestConst "helper.Less"
-compilePrim' PIf = TestConst "if"
-
-compileTest1 : Test1 -> Test2
-compileTest1 Test1' = Test2'
-compileTest1 Test1'' = Test22
-compileTest1 (TestPrim p) = compilePrim' p
-
-compileTest2 : Test2 -> Test1
-compileTest2 Test2' = Test1'
-compileTest2 Test22 = Test1''
-compileTest2 (TestConst "helper.Equals") = TestPrim PEqI
-compileTest2 (TestConst "helper.Minus") = TestPrim PSub
-compileTest2 (TestConst "helper.Multiply") = TestPrim PMul
-compileTest2 (TestConst "helper.Add") = TestPrim PAdd
-compileTest2 (TestConst "helper.MoreOrEquals") = TestPrim PGeq
-compileTest2 (TestConst "helper.Less") = TestPrim PLt
-compileTest2 (TestConst "if") = TestPrim PIf
-compileTest2 (TestConst x) = TestPrim PIf
-
+proof : (t : TTerm) -> (n : Nat) -> t ≡ (compileGoTerm n (compileTerm n t)) 
+proof (TPrim PAdd) n = refl
+proof (TPrim PSub) n = refl
+proof (TPrim PMul) n = refl
+proof (TPrim PGeq) n = refl
+proof (TPrim PLt) n = refl
+proof (TPrim PEqI) n = refl
+proof (TPrim PIf) n = refl
+proof (TDef (QName' x)) n = refl
+proof (TCon (QName' x)) n = refl
+proof (TLit (LitNat x)) n = refl
+proof (TLit (LitChar x)) n = refl
+proof TErased n = refl
+proof (TError TUnreachable) n = refl
+proof (TVar 0) 0 = refl
+proof (TVar 0) n = {!   !}
+proof (TVar x) 0 = {!   !}
+proof (TVar (suc x)) (suc n) = {!   !}
+proof (TLam t) n = {!   !}
+proof (TApp t x) n = {!   !}
+proof (TLet t t₁) n = {!   !}
+proof (TCase x x₁ t x₂) n = {!   !}
 
 addFunction : TTerm
 addFunction = 
@@ -278,7 +262,7 @@ addFunction =
           TApp (TDef (QName' "demo.add")) (TVar 0 ∷ TVar 1 ∷ []) ∷ []))
         ∷ [])
 
-addEquals : addFunction ≡ (compileGoTerm 1 (compileTerm 1 addFunction))
+addEquals : addFunction ≡   (compileGoTerm 1 (compileTerm 1 addFunction))
 addEquals = refl
 
 lengthFunction : TTerm
